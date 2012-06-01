@@ -1,0 +1,9 @@
+#
+# Radius Rapid Rotate
+#
+# Define the frequency of log rotations using cron syntax.
+#
+
+# Default rotation every 15mins
+*/15 * * * * root /usr/bin/radius-rapid-rotate
+

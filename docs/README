@@ -1,0 +1,18 @@
+RADIUS RAPID ROTATE
+-------------------
+
+Radius Rapid Rotate (R3) is a small utility that is called by cron regularly
+to browse the directory structure of the FreeRadius accounting logs and rotate
+the files.
+
+The time frequency of the rotation is determined by cron, R3 only concerns itself
+with the correct rotation of the log files.
+
+There is basic locking logic to advise if an admin does something that leads to
+multiple instances of the process running at the same time (something that is
+possible if the log rotation involves moving large files between block storage
+systems - eg local disk to NFS).
+
+Behaviour is somewhat configurable, execute with -h for options and details.
+
+
