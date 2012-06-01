@@ -33,6 +33,7 @@ use strict;
 use Getopt::Std;
 use Sys::Hostname;
 use POSIX qw(strftime);
+use Fcntl qw/:DEFAULT :flock/;
 
 
 ## Configuration ##
@@ -91,6 +92,16 @@ if (!-d $log_path_dest)
 ## Application ##
 
 print "Executing $program for host $hostname in debug mode at $date $time.\n" if $debug;
+
+
+# verify there is no other copy of this process running
+sysopen(LOCK, $lock, O_RDWR|O_CREAT, 0666);
+
+if (!flock(LOCK, LOCK_EX | LOCK_NB))
+{
+	die("Fatal: Unable to obtain lock on \"$lock\", is there another process running?\n");
+}
+
 
 #
 # The process here is simple - we need to browse the directory structure and for each IP and each log file, we need to
