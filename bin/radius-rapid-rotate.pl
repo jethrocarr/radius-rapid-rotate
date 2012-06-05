@@ -46,7 +46,7 @@ my @rotatefiles		= ("detail", "auth-detail", "reply-detail", "pre-proxy-detail",
 
 my $debug		= 0;
 
-my $date		= strftime "%Y%m%e", localtime;
+my $date		= strftime "%Y%m%d", localtime;
 my $time		= strftime "%H%M", localtime;
 
 my $hostname		= hostname;
@@ -110,7 +110,7 @@ if (!flock(LOCK, LOCK_EX | LOCK_NB))
 # Target naming format is radacct-{SERVER_HOSTNAME}-{IPADDRESS}-{TYPE}-{YYYYMMDD}-{HHMM}.log
 #
 # Before: /var/log/radius/radacct/192.168.0.1/detail
-# After: /newpath/radacct-ServerHostname-192.168.0.1-detail-20120530-1601.log
+# After: /newpath/20120530-1601-radacct-ServerHostname-192.168.0.1-detail.log
 #
 
 my @nas_addresses = glob("$log_path_radius/*");
@@ -131,7 +131,7 @@ foreach my $address (@nas_addresses)
 		if (-f "$address/$file")
 		{
 			my $log_old = "$address/$file";
-			my $log_new = "$log_path_dest/radacct-$hostname-$address_short-$file-$date-$time.log";
+			my $log_new = "$log_path_dest/$date-$time-radacct-$hostname-$address_short-$file.log";
 			
 			print "Rotating $log_old to $log_new\n" if $debug;
 

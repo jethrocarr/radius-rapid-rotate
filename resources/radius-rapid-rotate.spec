@@ -1,6 +1,6 @@
 Summary: Radius Rapid Rotate (R3) Log Rotater
 Name: radius-rapid-rotate
-Version: 1.0.0
+Version: 1.0.1
 Release: 1%{?dist}
 License: MIT
 URL: http://www.prophecy.net.nz
@@ -44,6 +44,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/radius-rapid-rotate
 
 %changelog
+* Tue Jun 05 2012 Jethro Carr <jethro.carr@prophecy.net.nz> 1.0.1
+- Adjustment to archived file naming scheme.
 * Fri Jun 01 2012 Jethro Carr <jethro.carr@prophecy.net.nz> 1.0.0
-- Built new RPM package
+- Built new RPM package.
 
