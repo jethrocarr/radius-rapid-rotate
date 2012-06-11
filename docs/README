@@ -13,6 +13,11 @@ multiple instances of the process running at the same time (something that is
 possible if the log rotation involves moving large files between block storage
 systems - eg local disk to NFS).
 
+R3 initially moves the file to a different temporary folder on the same file system,
+ensuring that FreeRadius handles the file rotation correctly. It then does a copy &
+delete to the final archival location, which works correctly for externally mounted
+filesystems.
+
 Behaviour is somewhat configurable, execute with -h for options and details.
 
 

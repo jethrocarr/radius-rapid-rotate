@@ -32,6 +32,7 @@
 use strict;
 use Getopt::Std;
 use Sys::Hostname;
+use File::Copy;
 use POSIX qw(strftime);
 use Fcntl qw/:DEFAULT :flock/;
 
@@ -39,7 +40,10 @@ use Fcntl qw/:DEFAULT :flock/;
 ## Configuration ##
 
 my $log_path_radius 	= "/var/log/radius/radacct/";
+my $log_path_tmp	= "/var/log/radius/R3tmp/";		# needs to be on the same filesystem as $log_path_radius
 my $log_path_dest	= "/var/log/radius/archive/";
+my $log_path_dest_mount	= 0;					# 0 == don't check, 1 == check if a filesystem is mounted here.
+
 my $lock		= "/var/lock/rapidradiusrotate.lock";
 
 my @rotatefiles		= ("detail", "auth-detail", "reply-detail", "pre-proxy-detail", "post-proxy-detail");
@@ -60,9 +64,9 @@ $hostname		=~ s/\.(\S*)$//g;
 my $options = {};
 my $program = ($0 =~ /([^\/]+)$/)[0];
 
-if (!getopts('vs:d:', $options))
+if (!getopts('vcs:d:t:', $options))
 {
-    die "usage: $program [-v] [-s source] [-d destination] [-h hostname]\n";
+    die "usage: $program [-v] [-c] [-s source] [-d destination] [-t tmpspace] [-h hostname]\n";
 }
 
 $debug = defined $options->{'v'};
@@ -77,6 +81,17 @@ if ($options->{'d'})
 	$log_path_dest = $options->{'d'};
 }
 
+if (defined $options->{'c'})
+{
+	$log_path_dest_mount = 1;
+}
+
+if ($options->{'t'})
+{
+	$log_path_tmp = $options->{'t'};
+}
+
+
 if (!-d $log_path_radius)
 {
 	die "Fatal: Unexpected failure: \"$log_path_radius\"no such FreeRadius source directory or no permissions granted.\n";
@@ -87,6 +102,10 @@ if (!-d $log_path_dest)
 	die "Fatal: Unexpected failure: \"$log_path_dest\"no such destination directory or no permissions granted.\n";
 }
 
+if (! -d $log_path_tmp)
+{
+	die "Fatal: Unexpected failure: \"$log_path_tmp\"no such destination directory or no permissions granted.\n";
+}
 
 
 ## Application ##
@@ -105,7 +124,7 @@ if (!flock(LOCK, LOCK_EX | LOCK_NB))
 
 #
 # The process here is simple - we need to browse the directory structure and for each IP and each log file, we need to
-# move the current log file and rename it.
+# move the current log file and rename it into the tmp directory.
 #
 # Target naming format is radacct-{SERVER_HOSTNAME}-{IPADDRESS}-{TYPE}-{YYYYMMDD}-{HHMM}.log
 #
@@ -131,7 +150,7 @@ foreach my $address (@nas_addresses)
 		if (-f "$address/$file")
 		{
 			my $log_old = "$address/$file";
-			my $log_new = "$log_path_dest/$date-$time-radacct-$hostname-$address_short-$file.log";
+			my $log_new = "$log_path_tmp/$date-$time-radacct-$hostname-$address_short-$file.log";
 			
 			print "Rotating $log_old to $log_new\n" if $debug;
 
@@ -147,6 +166,69 @@ foreach my $address (@nas_addresses)
 	}
 
 }
+
+
+#
+# All the logs are now in the temporary space, now we need to copy them
+# one-by-one to the final destination.
+#
+# We use this split tmp/dest directory method, since it protects us from losing
+# data if the archive directory is a remote archive and is unavailable - logs
+# will simply pool in the temp directory until they can be moved.
+#
+
+print "Moving tmp files to final destination....\n" if $debug;
+
+if ($log_path_dest_mount)
+{
+	# we need to validate if the remote archive location is a currently valid
+	# mountpoint. We chomp the path to remove trailing /
+
+	my $mountpath	= chomp($log_path_dest);
+	my $mount 	= `mount | grep $mountpath`;
+	chomp($mount);
+	
+	if (!$mount)
+	{
+		print "Unable to find an active mount for $log_path_dest\n";
+		print "Logs rotated but stuck in $log_path_tmp until issue is resolved.\n";
+		die("Fatal: Archive destination error");
+	}
+
+
+	# make sure the archive destination is writable - a read-only mounted share isn't
+	# much good to us. ;-)
+
+	if (!-w $log_path_dest)
+	{
+		print "Warning: Unable to write to the mount point $log_path_dest\n";
+		print "Logs rotated but stuck in $log_path_tmp until issue is resolved.\n";
+		die("Fatal: Archive destination error");
+	}
+}
+
+
+my @tmp_files = glob("$log_path_tmp/*");
+
+foreach my $file (@tmp_files)
+{
+	$file =~ /^\S*\/(\S*)$/;
+	my $file_short = $1;
+
+	print "Archiving file $file_short...\n" if $debug;
+
+	if (!copy($file, "$log_path_dest/$file_short"))
+	{
+		die("Fatal: Unable to archive log file \"$file_short\" to \"$log_path_dest\"!\n");
+	}
+	else
+	{
+		print "Deleting archived file $file_short from tmp space\n" if $debug;
+
+		unlink($file);
+	}
+}
+
 
 print "Log rotation process complete!\n" if $debug;
 

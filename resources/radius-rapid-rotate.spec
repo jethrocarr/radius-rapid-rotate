@@ -1,6 +1,6 @@
 Summary: Radius Rapid Rotate (R3) Log Rotater
 Name: radius-rapid-rotate
-Version: 1.0.1
+Version: 1.1.0
 Release: 1%{?dist}
 License: MIT
 URL: http://www.prophecy.net.nz
@@ -33,6 +33,9 @@ cp bin/radius-rapid-rotate.pl $RPM_BUILD_ROOT%{_bindir}/radius-rapid-rotate
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/cron.d/
 install -m 644 resources/radius-rapid-rotate.cron $RPM_BUILD_ROOT%{_sysconfdir}/cron.d/radius-rapid-rotate
 
+# make default directories
+mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/radius/archive
+mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/radius/R3tmp
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -42,8 +45,12 @@ rm -rf $RPM_BUILD_ROOT
 %doc docs/COPYING docs/README
 %attr(644,root,root) %config(noreplace) %{_sysconfdir}/cron.d/radius-rapid-rotate
 %{_bindir}/radius-rapid-rotate
+%{_localstatedir}/log/radius/archive
+%{_localstatedir}/log/radius/R3tmp
 
 %changelog
+* Mon Jun 11 2012 Jethro Carr <jethro.carr@prophecy.net.nz> 1.1.0
+- Support for archiveal directory on mounted shares.
 * Tue Jun 05 2012 Jethro Carr <jethro.carr@prophecy.net.nz> 1.0.1
 - Adjustment to archived file naming scheme.
 * Fri Jun 01 2012 Jethro Carr <jethro.carr@prophecy.net.nz> 1.0.0
