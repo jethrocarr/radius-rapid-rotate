@@ -184,7 +184,8 @@ if ($log_path_dest_mount)
 	# we need to validate if the remote archive location is a currently valid
 	# mountpoint. We chomp the path to remove trailing /
 
-	my $mountpath	= chomp($log_path_dest);
+	my $mountpath	= $log_path_dest;
+	chomp($mountpath);
 	my $mount 	= `mount | grep $mountpath`;
 	chomp($mount);
 	
