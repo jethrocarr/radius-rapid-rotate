@@ -4,6 +4,7 @@
 # Logrotation script for FreeRadius accounting logs.
 #
 # Copyright (C) 2012 Prophecy Networks Ltd
+# Copyright (C) 2012 Jethro Carr
 #
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
